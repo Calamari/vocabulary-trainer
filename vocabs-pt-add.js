@@ -2,11 +2,9 @@
 
 var path = require('path')
 var fs = require('fs')
+var chalk = require('chalk')
 var pkg = require('./package.json')
 var today = startOfDay(new Date())
-
-var boldOpen = '\u001b[1m'
-var boldClose = '\u001b[22m'
 
 const readline = require('readline')
 
@@ -85,7 +83,7 @@ function save(wordObject) {
 }
 
 function confirm(wordObject) {
-  console.log('Asking about', boldOpen, wordObject.germanWord, boldClose, `at ${new Date(wordObject.nextRepetition)}`)
+  console.log('Asking about', chalk.bold(wordObject.germanWord), `at ${new Date(wordObject.nextRepetition)}`)
   process.exit(0)
 }
 

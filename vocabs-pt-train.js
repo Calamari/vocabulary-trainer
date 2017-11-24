@@ -2,15 +2,13 @@
 
 var path = require('path')
 var fs = require('fs')
+var chalk = require('chalk')
 var pkg = require('./package.json')
 var today = startOfDay(new Date())
 var levenshtein = require('fast-levenshtein')
 var clear = require('console-clear')
 const now = new Date().getTime()
 const THRESHOLD = 1
-
-var boldOpen = '\u001b[1m'
-var boldClose = '\u001b[22m'
 
 const readline = require('readline')
 
@@ -28,41 +26,84 @@ program
 
 // MAIN PROGRAM:
 
-askWord()
-  // .then(checkIfWordExists)
-  // .then(askForForeignLang)
-  // .then(askForNextRepetition)
-  // .then(save)
-  // .catch(onError)
+function main() {
+  askSomething()
+    .then(waitToClear)
+    .then(main)
+}
+main()
 
-
-function askWord() {
+function askSomething() {
   const vocab = JSON.parse(fs.readFileSync(vocabFile))
   const chosenItem = chooseRandomly(vocab.filter(v => v.nextRepetition < now))
-
   if (!chosenItem) {
-    console.log('Looks like you are done for today. No words to train left.');
+    console.log('Looks like you are done for today. No words to train left.\n');
     process.exit(0);
   }
 
-  rl.question(`Translate "${chosenItem.germanWord}":`, function(input) {
-    const distance = levenshtein.get(chosenItem.word, input)
-    if (distance === 0) {
-      console.log('Super, that was correct!\nTo the next one…')
-      wordWasRight(chosenItem)
-        .then(waitToClear)
-        .then(askWord)
-    } else if (distance <= THRESHOLD) {
-      console.log(`Good enough, but the correct version would be: ${chosenItem.word}`)
-      wordWasRight(chosenItem)
-        .then(waitToClear)
-        .then(askWord)
-    } else {
-      console.log('That was wrong, the right translation is:', boldOpen, chosenItem.word, boldClose)
-      wordWasWrong(chosenItem)
-        .then(waitToClear)
-        .then(askWord)
-    }
+  switch (chosenItem.type) {
+    case 'conjugation':
+      return askConjugation(chosenItem)
+    default:
+      return askWord(chosenItem)
+  }
+}
+
+function askWord(item) {
+  return new Promise(function(resolve, reject) {
+    rl.question(`Translate "${item.germanWord}": `, function(input) {
+      const distance = levenshtein.get(item.word, input)
+      if (distance === 0) {
+        console.log('Super, that was correct!\nTo the next one…')
+        wordWasRight(item).then(resolve)
+      } else if (distance <= THRESHOLD) {
+        console.log(`Good enough, but the correct version would be: ${item.word}`)
+        wordWasRight(item).then(resolve)
+      } else {
+        console.log('That was wrong, the right translation is:', chalk.bold(item.word))
+        wordWasWrong(item).then(resolve)
+      }
+    })
+  })
+}
+
+function askConjugation(item) {
+  return new Promise(function(resolve, reject) {
+    clear(true)
+    console.log('Conjugate the following verb in', chalk.gray.italic(item.tense), 'tense:', chalk.bold(item.word), '\n')
+    askForm({ item, index: 0, fails: 0 })
+      .then(askForm)
+      .then(askForm)
+      .then(askForm)
+      .then(askForm)
+      .then(({ fails }) => {
+        if (fails) {
+          console.log('Sorry. But you have to try that again today')
+          return wordWasWrong(item)
+        } else {
+          console.log('Super, that was correct!\nTo the next one…')
+          return wordWasRight(item)
+        }
+      })
+      .then(resolve)
+  })
+}
+
+function askForm({ item, index, fails }) {
+  return new Promise(function(resolve, reject) {
+    const BEGINNINGS = ['Eu', 'Tu', 'Ele', 'Nós', 'Eles']
+    const rightAnswer = item.forms[index]
+
+    rl.question(BEGINNINGS[index] + ' ', function(input) {
+      process.stdout.cursorTo(BEGINNINGS[index].length + 1, index + 1)
+      if (input === rightAnswer) {
+        console.log(chalk.green(input))
+      } else {
+        console.log(chalk.red.strikethrough(input), `[${rightAnswer}]`)
+        ++fails
+      }
+      resolve({ item, index: index + 1, fails})
+    })
   })
 }
 
