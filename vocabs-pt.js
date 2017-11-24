@@ -17,6 +17,7 @@ program
 
 program
   .command('add', 'add a new word to vocabulary')
+  .command('addverb', 'add a new verb conjugation test to vocabulary')
   .command('train', 'train some words')
 
 program.parse(process.argv);

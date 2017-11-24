@@ -4,7 +4,9 @@ var path = require('path')
 var fs = require('fs')
 var chalk = require('chalk')
 var pkg = require('./package.json')
+var c = require('./constants')
 var today = startOfDay(new Date())
+const conjugationBeginnings = require('./config').conjugationBeginnings
 
 const readline = require('readline')
 
@@ -22,27 +24,25 @@ program
 
 // MAIN PROGRAM:
 
-askForGerman()
+askForWord()
   .then(checkIfWordExists)
-  .then(askForForeignLang)
+  .then(askForForms)
   .then(askForNextRepetition)
   .then(save)
   .then(confirm)
   .catch(onError)
 
 
-function askForGerman() {
+function askForWord() {
   return new Promise(function(resolve, reject) {
-    rl.question('Enter german word: ', function(word) {
-      resolve(word)
-    })
+    rl.question('Enter word we want to conjugate: ', resolve)
   })
 }
 
 function checkIfWordExists(word) {
   return new Promise(function(resolve, reject) {
     const vocab = JSON.parse(fs.readFileSync(vocabFile))
-    const entries = vocab.filter(x => x.germanWord === word)
+    const entries = vocab.filter(x => x.word === word && x.type === c.TYPE_CONJUGATION)
 
     if (entries.length > 0) {
       console.log('Word does already exist.')
@@ -52,10 +52,30 @@ function checkIfWordExists(word) {
   })
 }
 
-function askForForeignLang(germanWord) {
+function askForForms(word) {
   return new Promise(function(resolve, reject) {
-    rl.question('Enter foreign word: ', function(word) {
-      resolve({ germanWord: germanWord, word: word })
+    console.log('Enter conjugations in', chalk.gray.italic(c.ONLY_TENSE), 'tense:')
+
+    askForm({ forms: [], index: 0 })
+      .then(askForm)
+      .then(askForm)
+      .then(askForm)
+      .then(askForm)
+      .then(({ forms }) => {
+        resolve({
+          type: c.TYPE_CONJUGATION,
+          tense: c.ONLY_TENSE,
+          word,
+          forms
+        })
+      })
+  })
+}
+
+function askForm({ forms, index }) {
+  return new Promise(function(resolve, reject) {
+    rl.question(conjugationBeginnings[index] + ' ', function(input) {
+      resolve({ forms: [...forms, input], index: index + 1 })
     })
   })
 }
@@ -83,7 +103,7 @@ function save(wordObject) {
 }
 
 function confirm(wordObject) {
-  console.log('Asking about', chalk.bold(wordObject.germanWord), `after ${new Date(wordObject.nextRepetition)}`)
+  console.log('Asking about', chalk.bold(wordObject.word), `after ${new Date(wordObject.nextRepetition)}`)
   process.exit(0)
 }
 

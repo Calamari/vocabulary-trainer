@@ -4,9 +4,11 @@ var path = require('path')
 var fs = require('fs')
 var chalk = require('chalk')
 var pkg = require('./package.json')
+var c = require('./constants')
 var today = startOfDay(new Date())
 var levenshtein = require('fast-levenshtein')
 var clear = require('console-clear')
+const conjugationBeginnings = require('./config').conjugationBeginnings
 const now = new Date().getTime()
 const THRESHOLD = 1
 
@@ -42,7 +44,7 @@ function askSomething() {
   }
 
   switch (chosenItem.type) {
-    case 'conjugation':
+    case c.TYPE_CONJUGATION:
       return askConjugation(chosenItem)
     default:
       return askWord(chosenItem)
@@ -91,11 +93,10 @@ function askConjugation(item) {
 
 function askForm({ item, index, fails }) {
   return new Promise(function(resolve, reject) {
-    const BEGINNINGS = ['Eu', 'Tu', 'Ele', 'Nós', 'Eles']
     const rightAnswer = item.forms[index]
 
-    rl.question(BEGINNINGS[index] + ' ', function(input) {
-      process.stdout.cursorTo(BEGINNINGS[index].length + 1, index + 1)
+    rl.question(conjugationBeginnings[index] + ' ', function(input) {
+      process.stdout.cursorTo(conjugationBeginnings[index].length + 1, index + 2)
       if (input === rightAnswer) {
         console.log(chalk.green(input))
       } else {
