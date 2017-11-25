@@ -29,6 +29,7 @@ program
 // MAIN PROGRAM:
 
 function main() {
+  clear(true)
   askSomething()
     .then(waitToClear)
     .then(main)
@@ -53,15 +54,21 @@ function askSomething() {
 
 function askWord(item) {
   return new Promise(function(resolve, reject) {
-    rl.question(`Translate "${item.germanWord}": `, function(input) {
+    const question = `Translate "${item.germanWord}": `
+    rl.question(question, function(input) {
       const distance = levenshtein.get(item.word, input)
+      process.stdout.cursorTo(question.length, 0)
       if (distance === 0) {
-        console.log('Super, that was correct!\nTo the next one…')
+        console.log(chalk.green(input))
+        console.log('Super, that was correct!')
         wordWasRight(item).then(resolve)
       } else if (distance <= THRESHOLD) {
+        // @TODO Show within word where it is wrong
+        console.log(chalk.green(input))
         console.log(`Good enough, but the correct version would be: ${item.word}`)
         wordWasRight(item).then(resolve)
       } else {
+        console.log(chalk.red(input))
         console.log('That was wrong, the right translation is:', chalk.bold(item.word))
         wordWasWrong(item).then(resolve)
       }
