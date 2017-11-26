@@ -54,9 +54,9 @@ function askSomething() {
 
 function askWord(item) {
   return new Promise(function(resolve, reject) {
-    const question = `Translate "${item.germanWord}": `
+    const question = `Translate "${item.word}": `
     rl.question(question, function(input) {
-      const distance = levenshtein.get(item.word, input)
+      const distance = levenshtein.get(item.translation, input)
       process.stdout.cursorTo(question.length, 0)
       if (distance === 0) {
         console.log(chalk.green(input))
@@ -65,11 +65,11 @@ function askWord(item) {
       } else if (distance <= THRESHOLD) {
         // @TODO Show within word where it is wrong
         console.log(chalk.green(input))
-        console.log(`Good enough, but the correct version would be: ${item.word}`)
+        console.log(`Good enough, but the correct version would be: ${item.translation}`)
         wordWasRight(item).then(resolve)
       } else {
         console.log(chalk.red(input))
-        console.log('That was wrong, the right translation is:', chalk.bold(item.word))
+        console.log('That was wrong, the right translation is:', chalk.bold(item.translation))
         wordWasWrong(item).then(resolve)
       }
     })
@@ -155,7 +155,7 @@ function updateWord(item) {
   return new Promise(function(resolve, reject) {
     const vocab = JSON.parse(fs.readFileSync(vocabFile))
     const newVocab = vocab.map(function(v) {
-      if (v.germanWord === item.germanWord && v.word === item.word) {
+      if (v.word === item.word) {
         return item
       }
       return v

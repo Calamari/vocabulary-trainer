@@ -4,6 +4,7 @@ var path = require('path')
 var fs = require('fs')
 var chalk = require('chalk')
 var pkg = require('./package.json')
+var c = require('./constants')
 var today = startOfDay(new Date())
 
 const readline = require('readline')
@@ -42,7 +43,7 @@ function askForGerman() {
 function checkIfWordExists(word) {
   return new Promise(function(resolve, reject) {
     const vocab = JSON.parse(fs.readFileSync(vocabFile))
-    const entries = vocab.filter(x => x.germanWord === word)
+    const entries = vocab.filter(x => x.word === word)
 
     if (entries.length > 0) {
       console.log('Word does already exist.')
@@ -52,10 +53,10 @@ function checkIfWordExists(word) {
   })
 }
 
-function askForForeignLang(germanWord) {
+function askForForeignLang(word) {
   return new Promise(function(resolve, reject) {
-    rl.question('Enter foreign word: ', function(word) {
-      resolve({ germanWord: germanWord, word: word })
+    rl.question('Enter foreign word: ', function(translation) {
+      resolve({ word, translation, type: c.TYPE_TRANSLATION })
     })
   })
 }
@@ -83,7 +84,7 @@ function save(wordObject) {
 }
 
 function confirm(wordObject) {
-  console.log('Asking about', chalk.bold(wordObject.germanWord), `after ${new Date(wordObject.nextRepetition)}`)
+  console.log('Asking about', chalk.bold(wordObject.word), `after ${new Date(wordObject.nextRepetition)}`)
   process.exit(0)
 }
 
