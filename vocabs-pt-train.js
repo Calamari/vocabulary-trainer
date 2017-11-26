@@ -155,7 +155,7 @@ function updateWord(item) {
   return new Promise(function(resolve, reject) {
     const vocab = JSON.parse(fs.readFileSync(vocabFile))
     const newVocab = vocab.map(function(v) {
-      if (v.germanWord === item.germanWord) {
+      if (v.germanWord === item.germanWord && v.word === item.word) {
         return item
       }
       return v
