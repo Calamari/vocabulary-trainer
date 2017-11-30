@@ -5,7 +5,7 @@ var fs = require('fs')
 var chalk = require('chalk')
 var pkg = require('./package.json')
 var c = require('./constants')
-var today = startOfDay(new Date())
+const { inDays } = require('./utils/date')
 
 const readline = require('readline')
 
@@ -66,7 +66,7 @@ function askForNextRepetition(wordObject) {
     rl.question('When should we ask for it next? (in days, enter for immediately) ', function(countStr) {
       var days = parseInt(countStr, 10) || 0
 
-      wordObject.nextRepetition = addDays(today, days).getTime()
+      wordObject.nextRepetition = inDays(days).getTime()
       resolve(wordObject)
     })
   })
@@ -91,16 +91,4 @@ function confirm(wordObject) {
 function onError(err) {
   console.error('Sorry, something unexpected happend', err)
   process.exit(1)
-}
-
-
-
-
-function startOfDay(date) {
-  var time = date.getTime()
-  return new Date(time - (time % 86400000))
-}
-
-function addDays(date, days) {
-  return new Date(date.getTime() + days * 86400000)
 }

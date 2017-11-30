@@ -5,7 +5,7 @@ var fs = require('fs')
 var chalk = require('chalk')
 var pkg = require('./package.json')
 var c = require('./constants')
-var today = startOfDay(new Date())
+const { inDays } = require('./utils/date')
 var levenshtein = require('fast-levenshtein')
 var clear = require('console-clear')
 const conjugationBeginnings = require('./config').conjugationBeginnings
@@ -129,7 +129,7 @@ function wordWasRight(item) {
     ...item,
     seen: (item.seen || 0) + 1,
     consecutiveRight: (item.consecutiveRight || 0) + 1,
-    nextRepetition: addDays(today, 1).getTime()
+    nextRepetition: inDays(1).getTime()
   })
 }
 
@@ -168,13 +168,4 @@ function updateWord(item) {
 function chooseRandomly(items) {
   const len = items.length
   return items[Math.floor(Math.random() * len)]
-}
-
-function startOfDay(date) {
-  var time = date.getTime()
-  return new Date(time - (time % 86400000))
-}
-
-function addDays(date, days) {
-  return new Date(date.getTime() + (days * 86400000))
 }
