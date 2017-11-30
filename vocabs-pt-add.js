@@ -5,7 +5,7 @@ var fs = require('fs')
 var chalk = require('chalk')
 var pkg = require('./package.json')
 var c = require('./constants')
-const { inDays } = require('./utils/date')
+const Word = require('./models/Word')
 
 const readline = require('readline')
 
@@ -56,7 +56,7 @@ function checkIfWordExists(word) {
 function askForForeignLang(word) {
   return new Promise(function(resolve, reject) {
     rl.question('Enter foreign word: ', function(translation) {
-      resolve({ word, translation, type: c.TYPE_TRANSLATION })
+      resolve(new Word(word, translation))
     })
   })
 }
@@ -66,7 +66,7 @@ function askForNextRepetition(wordObject) {
     rl.question('When should we ask for it next? (in days, enter for immediately) ', function(countStr) {
       var days = parseInt(countStr, 10) || 0
 
-      wordObject.nextRepetition = inDays(days).getTime()
+      wordObject.repeatInDays(days)
       resolve(wordObject)
     })
   })
@@ -76,7 +76,7 @@ function save(wordObject) {
   return new Promise(function(resolve, reject) {
     const vocab = JSON.parse(fs.readFileSync(vocabFile))
 
-    vocab.push(wordObject)
+    vocab.push(wordObject.toJson())
 
     fs.writeFileSync(vocabFile, JSON.stringify(vocab))
     resolve(wordObject)
@@ -84,7 +84,7 @@ function save(wordObject) {
 }
 
 function confirm(wordObject) {
-  console.log('Asking about', chalk.bold(wordObject.word), `after ${new Date(wordObject.nextRepetition)}`)
+  console.log('Asking about', chalk.bold(wordObject.word), `after ${wordObject.nextRepetition}`)
   process.exit(0)
 }
 

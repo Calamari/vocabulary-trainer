@@ -1,15 +1,14 @@
 #!/usr/bin/env node
 
 var path = require('path')
-var fs = require('fs')
 var chalk = require('chalk')
 var pkg = require('./package.json')
 var c = require('./constants')
 const { inDays } = require('./utils/date')
+const Vocabulary = require('./models/Vocabulary')
 var levenshtein = require('fast-levenshtein')
 var clear = require('console-clear')
 const conjugationBeginnings = require('./config').conjugationBeginnings
-const now = new Date().getTime()
 const THRESHOLD = 1
 
 const readline = require('readline')
@@ -19,7 +18,8 @@ const rl = readline.createInterface({
   output: process.stdout
 })
 
-var vocabFile = path.join(__dirname, pkg.vocabFile);
+const vocabFile = path.join(__dirname, pkg.vocabFile);
+const vocabulary = new Vocabulary(vocabFile)
 
 var program = require('commander')
 
@@ -37,8 +37,7 @@ function main() {
 main()
 
 function askSomething() {
-  const vocab = JSON.parse(fs.readFileSync(vocabFile))
-  const chosenItem = chooseRandomly(vocab.filter(v => v.nextRepetition < now))
+  const chosenItem = vocabulary.nextItem()
   if (!chosenItem) {
     console.log('Looks like you are done for today. No words to train left.\n');
     process.exit(0);
@@ -61,17 +60,19 @@ function askWord(item) {
       if (distance === 0) {
         console.log(chalk.green(input))
         console.log('Super, that was correct!')
-        wordWasRight(item).then(resolve)
+        item.gotItRight()
       } else if (distance <= THRESHOLD) {
         // @TODO Show within word where it is wrong
         console.log(chalk.green(input))
         console.log(`Good enough, but the correct version would be: ${item.translation}`)
-        wordWasRight(item).then(resolve)
+        item.gotItRight()
       } else {
         console.log(chalk.red(input))
         console.log('That was wrong, the right translation is:', chalk.bold(item.translation))
-        wordWasWrong(item).then(resolve)
+        item.gotItWrong()
       }
+      vocabulary.updateWord(item)
+      resolve()
     })
   })
 }
@@ -88,11 +89,12 @@ function askConjugation(item) {
       .then(({ fails }) => {
         if (fails) {
           console.log('Sorry. But you have to try that again today')
-          return wordWasWrong(item)
+          item.gotItWrong()
         } else {
           console.log('Super, that was correct!\nTo the next one…')
-          return wordWasRight(item)
+          item.gotItRight()
         }
+        vocabulary.updateWord(item)
       })
       .then(resolve)
   })
@@ -115,33 +117,6 @@ function askForm({ item, index, fails }) {
   })
 }
 
-function save(wordObject) {
-  const vocab = JSON.parse(fs.readFileSync(vocabFile))
-
-  vocab.push(wordObject)
-
-  fs.writeFileSync(vocabFile, JSON.stringify(vocab))
-  process.exit(0)
-}
-
-function wordWasRight(item) {
-  return updateWord({
-    ...item,
-    seen: (item.seen || 0) + 1,
-    consecutiveRight: (item.consecutiveRight || 0) + 1,
-    nextRepetition: inDays(1).getTime()
-  })
-}
-
-function wordWasWrong(item) {
-  return updateWord({
-    ...item,
-    seen: (item.seen || 0) + 1,
-    timesEnteredWrong: (item.timesEnteredWrong || 0) + 1,
-    consecutiveRight: 0
-  })
-}
-
 function waitToClear() {
   return new Promise(function(resolve, reject) {
     rl.question('\n\nPress any key to proceed.', function() {
@@ -149,23 +124,4 @@ function waitToClear() {
       resolve()
     })
   })
-}
-
-function updateWord(item) {
-  return new Promise(function(resolve, reject) {
-    const vocab = JSON.parse(fs.readFileSync(vocabFile))
-    const newVocab = vocab.map(function(v) {
-      if (v.word === item.word) {
-        return item
-      }
-      return v
-    })
-    fs.writeFileSync(vocabFile, JSON.stringify(newVocab))
-    resolve()
-  });
-}
-
-function chooseRandomly(items) {
-  const len = items.length
-  return items[Math.floor(Math.random() * len)]
 }
