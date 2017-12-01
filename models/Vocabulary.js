@@ -12,10 +12,28 @@ module.exports = class Vocabulary {
     this.vocabFile = vocabFile
   }
 
-  nextItem () {
+  get set () {
     const now = new Date().getTime()
     const vocab = JSON.parse(fs.readFileSync(this.vocabFile))
-    let item = chooseRandomly(vocab.filter(v => v.nextRepetition < now))
+    if (this._setIds) {
+      const currentSet = vocab.filter(v => v.nextRepetition < now && this._setIds.indexOf(v.word) !== -1)
+
+      if (currentSet.length) return currentSet
+    }
+    const set = vocab.filter(v => v.nextRepetition < now).slice(0, c.SET_LENGTH)
+    this._setIds = set.map(v => v.word)
+    return set
+  }
+
+  get currentSetLength () {
+    if (!this._setIds) return 0
+    const now = new Date().getTime()
+    const vocab = JSON.parse(fs.readFileSync(this.vocabFile))
+    return vocab.filter(v => v.nextRepetition < now && this._setIds.indexOf(v.word) !== -1).length
+  }
+
+  nextItem () {
+    let item = chooseRandomly(this.set)
     if (item) {
       return Mapping[item.type].fromJson(item)
     }

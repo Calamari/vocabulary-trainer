@@ -119,7 +119,8 @@ function askForm({ item, index, fails }) {
 
 function waitToClear() {
   return new Promise(function(resolve, reject) {
-    rl.question('\n\nPress any key to proceed.', function() {
+    console.log(`\n\n${vocabulary.currentSetLength} items until next set`)
+    rl.question('Press any key to proceed.', function() {
       clear(true)
       resolve()
     })
