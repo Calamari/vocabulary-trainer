@@ -9,7 +9,7 @@ module.exports = class WordBase {
   gotItRight () {
     this.seen = (this.seen || 0) + 1
     this.consecutiveRight = (this.consecutiveRight || 0) + 1
-    this.nextRepetition = inDays(1)
+    this.nextRepetition = inDays(Math.pow(2, this.consecutiveRight - 1))
   }
 
   gotItWrong () {
