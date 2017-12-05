@@ -4,11 +4,12 @@ var path = require('path')
 var chalk = require('chalk')
 var pkg = require('./package.json')
 var c = require('./constants')
+const exec = require('child_process').exec
 const { inDays } = require('./utils/date')
 const Vocabulary = require('./models/Vocabulary')
 var levenshtein = require('fast-levenshtein')
 var clear = require('console-clear')
-const conjugationBeginnings = require('./config').conjugationBeginnings
+const config = require('./config')
 const THRESHOLD = 1
 
 const readline = require('readline')
@@ -71,6 +72,7 @@ function askWord(item) {
         console.log('That was wrong, the right translation is:', chalk.bold(item.translation))
         item.gotItWrong()
       }
+      exec(`say -v "${config.voice}" "${item.translation}"`)
       vocabulary.updateWord(item)
       resolve()
     })
@@ -104,8 +106,8 @@ function askForm({ item, index, fails }) {
   return new Promise(function(resolve, reject) {
     const rightAnswer = item.forms[index]
 
-    rl.question(conjugationBeginnings[index] + ' ', function(input) {
-      process.stdout.cursorTo(conjugationBeginnings[index].length + 1, index + 2)
+    rl.question(config.conjugationBeginnings[index] + ' ', function(input) {
+      process.stdout.cursorTo(config.conjugationBeginnings[index].length + 1, index + 2)
       if (input === rightAnswer) {
         console.log(chalk.green(input))
       } else {
