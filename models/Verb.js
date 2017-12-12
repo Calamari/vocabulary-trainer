@@ -17,6 +17,9 @@ module.exports = class Verb extends WordBase {
       forms: this.forms,
       tense: this.tense,
       nextRepetition: this.nextRepetition.getTime(),
+      consecutiveRight: this.consecutiveRight,
+      timesEnteredWrong: this.timesEnteredWrong,
+      seen: this.seen,
       type: this.type
     }
   }

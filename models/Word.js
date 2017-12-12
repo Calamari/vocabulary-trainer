@@ -15,6 +15,9 @@ module.exports = class Word extends WordBase {
       word: this.word,
       translation: this.translation,
       nextRepetition: this.nextRepetition.getTime(),
+      consecutiveRight: this.consecutiveRight,
+      timesEnteredWrong: this.timesEnteredWrong,
+      seen: this.seen,
       type: this.type
     }
   }
