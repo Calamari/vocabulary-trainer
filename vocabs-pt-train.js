@@ -58,23 +58,47 @@ function askWord(item) {
     rl.question(question, function(input) {
       const distance = levenshtein.get(item.translation, input)
       process.stdout.cursorTo(question.length, 0)
+      exec(`say -v "${config.voice}" "${item.translation}"`)
       if (distance === 0) {
         console.log(chalk.green(input))
         console.log('Super, that was correct!')
         item.gotItRight()
+        vocabulary.updateWord(item)
+        resolve(item)
       } else if (distance <= THRESHOLD) {
         // @TODO Show within word where it is wrong
         console.log(chalk.green(input))
-        console.log(`Good enough, but the correct version would be: ${item.translation}`)
-        item.gotItRight()
+        console.log(`That was almost correct, but the correct version would be: ${item.translation}`)
+        askAgainUntilCorrect(item).then(() => {
+          item.gotItRight()
+          vocabulary.updateWord(item)
+          resolve(item)
+        })
       } else {
         console.log(chalk.red(input))
         console.log('That was wrong, the right translation is:', chalk.bold(item.translation))
-        item.gotItWrong()
+        askAgainUntilCorrect(item).then(() => {
+          item.gotItWrong()
+          vocabulary.updateWord(item)
+          resolve(item)
+        })
       }
-      exec(`say -v "${config.voice}" "${item.translation}"`)
-      vocabulary.updateWord(item)
-      resolve()
+    })
+  })
+}
+
+function askAgainUntilCorrect(item, tryCount = 0) {
+  return new Promise(function(resolve, reject) {
+    const question = tryCount === 0
+      ? `\nPlease write it again, just to make sure, you have it now: `
+      : 'Nope, not quite, try again: '
+    rl.question(question, function(input) {
+      if (levenshtein.get(item.translation, input) === 0) {
+        ok = true
+        resolve()
+      } else {
+        askAgainUntilCorrect(item, tryCount + 1).then(resolve)
+      }
     })
   })
 }
