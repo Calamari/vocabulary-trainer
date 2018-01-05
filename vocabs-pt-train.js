@@ -5,7 +5,7 @@ var chalk = require('chalk')
 var pkg = require('./package.json')
 var c = require('./constants')
 const exec = require('child_process').exec
-const { inDays } = require('./utils/date')
+const { inDays, daysInWords } = require('./utils/date')
 const Vocabulary = require('./models/Vocabulary')
 var levenshtein = require('fast-levenshtein')
 var clear = require('console-clear')
@@ -143,9 +143,12 @@ function askForm({ item, index, fails }) {
   })
 }
 
-function waitToClear() {
+function waitToClear(lastItem) {
   return new Promise(function(resolve, reject) {
-    console.log(`\n\n${vocabulary.currentSetLength} items until next set`)
+    if (lastItem) {
+      console.log(`\n\nNext repetition ${daysInWords(lastItem.nextRepetitionInDays)}`)
+    }
+    console.log(`\n${vocabulary.currentSetLength} items until next set`)
     rl.question('Press any key to proceed.', function() {
       clear(true)
       resolve()

@@ -15,9 +15,23 @@ function inDays(num) {
   return addDays(today(), num)
 }
 
+function daysInWords(days) {
+  switch (days) {
+    case 0:
+      return 'today'
+    case 1:
+      return 'tomorrow'
+    case 2:
+      return 'the day after tomorrow'
+    default:
+      return `in ${days} days`
+  }
+}
+
 module.exports = {
   startOfDay,
   addDays,
   today,
-  inDays
+  inDays,
+  daysInWords
 }
